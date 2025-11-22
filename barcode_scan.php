@@ -17,6 +17,7 @@ $data = json_decode(file_get_contents('php://input'), true);
 $barcode = $data['barcode'] ?? null;
 $productName = $data['product_name'] ?? null;
 $quantity = $data['quantity'] ?? 1;
+$location = $data['location'] ?? 'Vorratskammer';
 
 if (!$barcode) {
     http_response_code(400);
@@ -72,10 +73,10 @@ try {
     // Insert new product into inventory
     $stmt = $pdo->prepare("
         INSERT INTO purchased_items
-        (item_name, specification, barcode, quantity, purchased_at, list_name)
-        VALUES (?, '', ?, ?, NOW(), 'Gescannt')
+        (item_name, specification, barcode, quantity, purchased_at, list_name, location)
+        VALUES (?, '', ?, ?, NOW(), 'Gescannt', ?)
     ");
-    $stmt->execute([$productName, $barcode, $quantity]);
+    $stmt->execute([$productName, $barcode, $quantity, $location]);
 
     $newId = $pdo->lastInsertId();
 

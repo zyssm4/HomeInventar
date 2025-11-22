@@ -14,7 +14,7 @@ require '/volume1/homes/web/dbconfig_Brings.php';
 try {
     // Get all inventory items ordered by name
     $stmt = $pdo->query("
-        SELECT 
+        SELECT
             id,
             item_name as name,
             specification,
@@ -23,9 +23,10 @@ try {
             barcode,
             purchased_at as date,
             synced_at,
-            CASE 
-                WHEN DATE(purchased_at) = CURDATE() THEN 1 
-                ELSE 0 
+            COALESCE(location, 'Vorratskammer') as location,
+            CASE
+                WHEN DATE(purchased_at) = CURDATE() THEN 1
+                ELSE 0
             END as is_new
         FROM purchased_items
         ORDER BY item_name ASC
