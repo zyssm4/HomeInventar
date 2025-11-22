@@ -91,6 +91,13 @@
         <option value="quantity_asc">Menge ↑</option>
       </select>
     </div>
+    <div class="quick-mode-toggle">
+      <label class="toggle-switch">
+        <input type="checkbox" id="quickModeToggle" onchange="toggleQuickMode()">
+        <span class="toggle-slider"></span>
+      </label>
+      <span class="toggle-label">⚡ Quick Mode</span>
+    </div>
   </div>
 
   <!-- Inventory List -->
@@ -262,6 +269,22 @@ let items = [];
 let filteredItems = [];
 let html5QrCode = null;
 let currentBarcode = null;
+let quickMode = false;
+
+// Touch tracking for swipe gestures
+let touchStartX = 0;
+let touchStartY = 0;
+let touchCurrentItem = null;
+
+// Toggle Quick Mode
+function toggleQuickMode() {
+  quickMode = document.getElementById('quickModeToggle').checked;
+  if (quickMode) {
+    showToast('Quick Mode aktiviert - Tippen = -1', 'info');
+  } else {
+    showToast('Quick Mode deaktiviert', 'info');
+  }
+}
 
 // Format date
 function formatDate(dateString) {
@@ -359,25 +382,106 @@ function renderInventory() {
   }
 
   listElement.innerHTML = filteredItems.map(item => `
-    <div class="inventory-item" onclick="openEditModal(${item.id})">
-      <div class="item-icon">${item.icon}</div>
-      <div class="item-info">
-        <div class="item-name">
-          ${item.display_name}
-          ${item.is_new == 1 ? '<span class="new-badge">NEU</span>' : ''}
+    <div class="inventory-item" data-id="${item.id}" onclick="handleItemClick(${item.id}, event)">
+      <div class="swipe-indicator swipe-left-indicator">-1</div>
+      <div class="item-content">
+        <div class="item-icon">${item.icon}</div>
+        <div class="item-info">
+          <div class="item-name">
+            ${item.display_name}
+            ${item.is_new == 1 ? '<span class="new-badge">NEU</span>' : ''}
+          </div>
+          <div class="item-date">Hinzugefügt: ${formatDate(item.date)}</div>
+          ${item.category ? `<div class="item-meta">📁 ${item.category}</div>` : ''}
+          ${item.location ? `<div class="item-meta">📍 ${item.location}</div>` : ''}
         </div>
-        <div class="item-date">Hinzugefügt: ${formatDate(item.date)}</div>
-        ${item.category ? `<div class="item-meta">📁 ${item.category}</div>` : ''}
-        ${item.location ? `<div class="item-meta">📍 ${item.location}</div>` : ''}
-      </div>
-      <div class="item-quantity">${item.quantity}x</div>
-      <div class="item-actions" onclick="event.stopPropagation()">
-        <button class="btn-increment" onclick="incrementItem(${item.id})" title="Anzahl erhöhen">+1</button>
-        ${item.quantity > 1 ? `<button class="btn-decrement" onclick="decrementItem(${item.id})" title="Anzahl reduzieren">-1</button>` : ''}
-        <button class="btn-remove" onclick="removeItem(${item.id})" title="Artikel entfernen">🗑️</button>
+        <div class="item-quantity">${item.quantity}x</div>
+        <div class="item-actions" onclick="event.stopPropagation()">
+          <button class="btn-increment" onclick="incrementItem(${item.id})" title="Anzahl erhöhen">+1</button>
+          ${item.quantity > 1 ? `<button class="btn-decrement" onclick="decrementItem(${item.id}, true)" title="Anzahl reduzieren">-1</button>` : ''}
+          <button class="btn-remove" onclick="removeItem(${item.id})" title="Artikel entfernen">🗑️</button>
+        </div>
       </div>
     </div>
   `).join('');
+
+  // Add touch event listeners for swipe gestures
+  document.querySelectorAll('.inventory-item').forEach(item => {
+    item.addEventListener('touchstart', handleTouchStart, { passive: true });
+    item.addEventListener('touchmove', handleTouchMove, { passive: false });
+    item.addEventListener('touchend', handleTouchEnd);
+  });
+}
+
+// Handle item click (Quick Mode or Edit)
+function handleItemClick(id, event) {
+  // Don't trigger if clicking on actions
+  if (event.target.closest('.item-actions')) return;
+
+  if (quickMode) {
+    // Quick Mode: instant decrement
+    decrementItem(id, true);
+  } else {
+    // Normal mode: open edit modal
+    openEditModal(id);
+  }
+}
+
+// Touch handlers for swipe gestures
+function handleTouchStart(e) {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchCurrentItem = e.currentTarget;
+  touchCurrentItem.classList.add('touching');
+}
+
+function handleTouchMove(e) {
+  if (!touchCurrentItem) return;
+
+  const touchX = e.touches[0].clientX;
+  const touchY = e.touches[0].clientY;
+  const diffX = touchStartX - touchX;
+  const diffY = Math.abs(touchStartY - touchY);
+
+  // Only allow horizontal swipes (not vertical scrolling)
+  if (diffY > 30) {
+    touchCurrentItem.classList.remove('touching', 'swiping-left');
+    touchCurrentItem = null;
+    return;
+  }
+
+  // Swipe left detection
+  if (diffX > 20) {
+    e.preventDefault();
+    const swipeAmount = Math.min(diffX, 100);
+    touchCurrentItem.style.transform = `translateX(-${swipeAmount}px)`;
+    touchCurrentItem.classList.add('swiping-left');
+  } else {
+    touchCurrentItem.style.transform = '';
+    touchCurrentItem.classList.remove('swiping-left');
+  }
+}
+
+function handleTouchEnd(e) {
+  if (!touchCurrentItem) return;
+
+  const touchEndX = e.changedTouches[0].clientX;
+  const diffX = touchStartX - touchEndX;
+
+  // Reset visual state
+  touchCurrentItem.style.transform = '';
+  touchCurrentItem.classList.remove('touching', 'swiping-left');
+
+  // If swiped left more than 80px, decrement
+  if (diffX > 80) {
+    const itemId = touchCurrentItem.dataset.id;
+    touchCurrentItem.classList.add('swipe-complete');
+    setTimeout(() => {
+      decrementItem(itemId, true);
+    }, 150);
+  }
+
+  touchCurrentItem = null;
 }
 
 // Increment item quantity
@@ -407,8 +511,8 @@ async function incrementItem(id) {
 }
 
 // Decrement item quantity
-async function decrementItem(id) {
-  if (!confirm('Anzahl um 1 reduzieren?')) return;
+async function decrementItem(id, skipConfirm = false) {
+  if (!skipConfirm && !confirm('Anzahl um 1 reduzieren?')) return;
 
   try {
     const response = await fetch('db_set.php', {

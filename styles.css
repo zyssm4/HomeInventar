@@ -1467,3 +1467,150 @@ h1 {
     font-size: 0.75rem;
   }
 }
+
+/* Quick Mode Toggle */
+.quick-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(42, 24, 16, 0.8);
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #4a3628;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #8b7355;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #d4af37;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+  background-color: #2a1810;
+}
+
+.toggle-label {
+  color: #d4af37;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Swipe Gesture Styles */
+.inventory-item {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease;
+}
+
+.item-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  position: relative;
+  background: inherit;
+  z-index: 1;
+}
+
+.swipe-indicator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  z-index: 0;
+}
+
+.swipe-left-indicator {
+  right: 0;
+  background: linear-gradient(90deg, transparent, #e74c3c);
+  color: white;
+}
+
+.inventory-item.touching {
+  transition: none;
+}
+
+.inventory-item.swiping-left .swipe-left-indicator {
+  opacity: 1;
+}
+
+.inventory-item.swipe-complete {
+  animation: swipeOutLeft 0.15s ease forwards;
+}
+
+@keyframes swipeOutLeft {
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+/* Quick Mode indicator on items */
+.inventory-item:active {
+  transform: scale(0.98);
+}
+
+/* Mobile touch feedback */
+@media (hover: none) and (pointer: coarse) {
+  .inventory-item {
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: pan-y;
+  }
+
+  .quick-mode-toggle {
+    justify-content: center;
+  }
+}
+
+/* Responsive adjustments for toggle */
+@media (max-width: 768px) {
+  .quick-mode-toggle {
+    margin-top: 8px;
+    justify-content: center;
+  }
+
+  .toggle-label {
+    font-size: 0.8rem;
+  }
+}
