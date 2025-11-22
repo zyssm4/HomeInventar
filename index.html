@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Food @ Home – Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="torch-light torch-left"></div>
+  <div class="torch-light torch-right"></div>
+
+  <div class="login-container">
+    <div class="door-frame">
+      <div class="door-container" id="doorContainer">
+        <div class="door-leaf door-left">
+          <div class="door-handle"></div>
+        </div>
+        <div class="door-leaf door-right">
+          <div class="door-handle"></div>
+        </div>
+        
+        <div class="login-content">
+          <div class="logo-section">
+            <div class="cave-icon">🥫</div>
+            <h1>Food @ Home</h1>
+          </div>
+          
+          <form onsubmit="checkPassword(event)">
+            <div class="form-group">
+              <label for="password">Passwort</label>
+              <input 
+                type="password" 
+                id="password" 
+                placeholder="Passwort eingeben" 
+                required
+                autocomplete="current-password"
+              />
+            </div>
+            <button class="login-btn" type="submit" id="loginBtn">
+              <span>Tür öffnen</span>
+            </button>
+            <div class="error" id="error"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer>
+    &copy; 2025 Bösingen
+  </footer>
+
+    <script>
+    function checkPassword(event) {
+      event.preventDefault();
+      
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('error');
+      const loginBtn = document.getElementById('loginBtn');
+      const doorContainer = document.getElementById('doorContainer');
+      const dashboardReveal = document.getElementById('dashboardReveal');
+      
+      errorDiv.classList.remove('show');
+      errorDiv.textContent = '';
+      loginBtn.classList.add('loading');
+      
+      fetch('https://homeinventar.zyssethome.synology.me/config.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      })
+      .then(response => response.json())
+      .then(data => {
+        loginBtn.classList.remove('loading');
+        
+        if (data.success) {
+          // Trigger door opening animation
+          doorContainer.classList.add('opening');
+          
+          // Show dashboard reveal after door starts opening
+          setTimeout(() => {
+            dashboardReveal.classList.add('active');
+          }, 800);
+          
+          // Redirect to dashboard
+          setTimeout(() => {
+            window.location.href = 'https://homeinventar.zyssethome.synology.me/dashboard.php';
+          }, 1500);
+        } else {
+          errorDiv.textContent = data.message || 'Falsches Passwort! Bitte erneut versuchen.';
+          errorDiv.classList.add('show');
+          document.getElementById('password').value = '';
+          document.getElementById('password').focus();
+        }
+      })
+      .catch(err => {
+        console.error('Error calling API:', err);
+        loginBtn.classList.remove('loading');
+        errorDiv.textContent = 'Login fehlgeschlagen. Bitte später erneut versuchen.';
+        errorDiv.classList.add('show');
+      });
+    }
+
+    document.getElementById('password').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        checkPassword(e);
+      }
+    });
+  </script>
+</body>
+</html>
