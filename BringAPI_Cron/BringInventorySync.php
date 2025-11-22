@@ -168,7 +168,7 @@ class BringInventorySync {
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'X-BRING-API-KEY: cof4Nc6D8saplXjE3h3HXqHH8m7VU2i1Gs0g85Sp',
+                'X-BRING-API-KEY:' . $this->apiKey,
                 'Authorization: Bearer ' . $this->token,
                 'Accept: application/json'
             ]);
