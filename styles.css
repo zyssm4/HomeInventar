@@ -995,3 +995,222 @@ h1 {
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
+
+/* Scanner Container */
+.scanner-container {
+  background: linear-gradient(135deg, #3d2817 0%, #2a1810 100%);
+  border-radius: 15px;
+  padding: 20px;
+  max-width: 500px;
+  width: 100%;
+  border: 2px solid #4a3628;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.scanner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #4a3628;
+}
+
+.scanner-header h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 1.3rem;
+  color: #d4af37;
+  margin: 0;
+}
+
+.scanner-header .close-scanner {
+  background: none;
+  border: none;
+  color: #8b7355;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  margin: 0;
+  box-shadow: none;
+}
+
+.scanner-header .close-scanner:hover {
+  color: #d4af37;
+  transform: none;
+  box-shadow: none;
+}
+
+#reader {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#reader video {
+  border-radius: 8px;
+}
+
+.scanner-result {
+  margin-top: 15px;
+  padding: 10px;
+  text-align: center;
+  color: #8b7355;
+  font-size: 0.9rem;
+}
+
+/* Product Name Modal */
+.product-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.product-modal.active {
+  display: flex;
+}
+
+.product-modal-content {
+  background: linear-gradient(135deg, #3d2817 0%, #2a1810 100%);
+  border-radius: 15px;
+  padding: 30px;
+  max-width: 400px;
+  width: 100%;
+  border: 2px solid #4a3628;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.product-modal-content h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 1.3rem;
+  color: #d4af37;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.product-modal-content p {
+  color: #8b7355;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.product-modal-content #scannedBarcode {
+  color: #d4af37;
+  font-weight: 600;
+}
+
+.product-modal-content .form-group {
+  margin-bottom: 15px;
+}
+
+.product-modal-content label {
+  display: block;
+  color: #d4af37;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.product-modal-content input[type="text"],
+.product-modal-content input[type="number"] {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid #6d5d4b;
+  font-size: 1rem;
+  background: rgba(42, 24, 16, 0.6);
+  color: #d4af37;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.product-modal-content input[type="text"]:focus,
+.product-modal-content input[type="number"]:focus {
+  border-color: #d4af37;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.product-modal-content input::placeholder {
+  color: #8b7355;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-cancel, .btn-save {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  font-family: 'Cinzel', serif;
+}
+
+.btn-cancel {
+  background: linear-gradient(135deg, #6d5d4b 0%, #4a3628 100%);
+  color: #d4af37;
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #d4af37 0%, #b8941f 100%);
+  color: #2a1810;
+}
+
+.btn-cancel:hover, .btn-save:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Toast notifications */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  padding: 15px 25px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  z-index: 2000;
+  opacity: 0;
+  transition: all 0.3s ease;
+  max-width: 90%;
+  text-align: center;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.toast-success {
+  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+}
+
+.toast-error {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+}
+
+.toast-info {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+}

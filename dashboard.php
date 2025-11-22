@@ -25,6 +25,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Roboto:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css" />
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
 <div class="container">
@@ -68,13 +69,39 @@
 
 <!-- Scanner Modal -->
 <div class="scanner-modal" id="scannerModal">
-  <video id="video" autoplay playsinline></video>
-  <div class="scanner-overlay"></div>
-  <button class="close-scanner" onclick="closeScanner()">Schließen</button>
+  <div class="scanner-container">
+    <div class="scanner-header">
+      <h3>Barcode Scanner</h3>
+      <button class="close-scanner" onclick="closeScanner()">&times;</button>
+    </div>
+    <div id="reader"></div>
+    <div class="scanner-result" id="scannerResult"></div>
+  </div>
+</div>
+
+<!-- Product Name Modal -->
+<div class="product-modal" id="productModal">
+  <div class="product-modal-content">
+    <h3>Produkt nicht gefunden</h3>
+    <p>Barcode: <span id="scannedBarcode"></span></p>
+    <div class="form-group">
+      <label for="productName">Produktname eingeben:</label>
+      <input type="text" id="productName" placeholder="z.B. Milch, Brot, etc." required />
+    </div>
+    <div class="form-group">
+      <label for="productQuantity">Menge:</label>
+      <input type="number" id="productQuantity" value="1" min="1" />
+    </div>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeProductModal()">Abbrechen</button>
+      <button class="btn-save" onclick="saveProduct()">Speichern</button>
+    </div>
+  </div>
 </div>
 <script>
 let items = [];
-let stream = null;
+let html5QrCode = null;
+let currentBarcode = null;
 
 // Format date
 function formatDate(dateString) {
@@ -254,37 +281,162 @@ function showError(message) {
   `;
 }
 
-// Camera scanner
-async function openScanner() {
+// Barcode scanner using html5-qrcode
+function openScanner() {
   const modal = document.getElementById('scannerModal');
-  const video = document.getElementById('video');
-  
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'environment' } 
+  const resultDiv = document.getElementById('scannerResult');
+
+  modal.classList.add('active');
+  resultDiv.textContent = '';
+
+  html5QrCode = new Html5Qrcode("reader");
+
+  const config = {
+    fps: 10,
+    qrbox: { width: 250, height: 150 },
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.CODE_93
+    ]
+  };
+
+  html5QrCode.start(
+    { facingMode: "environment" },
+    config,
+    onScanSuccess,
+    onScanError
+  ).catch(err => {
+    console.error('Error starting scanner:', err);
+    resultDiv.textContent = 'Kamera konnte nicht gestartet werden: ' + err;
+  });
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+  // Stop scanning after successful read
+  if (html5QrCode) {
+    html5QrCode.stop().then(() => {
+      processBarcode(decodedText);
+    }).catch(err => {
+      console.error('Error stopping scanner:', err);
+      processBarcode(decodedText);
     });
-    video.srcObject = stream;
-    modal.classList.add('active');
-    
-    alert('Barcode-Scanner Funktion wird implementiert');
-  } catch (err) {
-    console.error('Error accessing camera:', err);
-    alert('Kamera konnte nicht geöffnet werden. Bitte überprüfen Sie die Berechtigungen.');
+  }
+}
+
+function onScanError(errorMessage) {
+  // Ignore scan errors (happens frequently when no barcode in view)
+}
+
+async function processBarcode(barcode) {
+  const resultDiv = document.getElementById('scannerResult');
+  resultDiv.textContent = 'Verarbeite Barcode: ' + barcode;
+
+  try {
+    const response = await fetch('barcode_scan.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ barcode: barcode })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      // Product added or updated
+      closeScanner();
+      showToast(data.message + ': ' + data.item.name, 'success');
+      loadInventory();
+    } else if (data.needs_name) {
+      // Product not found, need user input
+      closeScanner();
+      showProductModal(barcode);
+    } else {
+      resultDiv.textContent = 'Fehler: ' + (data.error || 'Unbekannter Fehler');
+    }
+  } catch (error) {
+    console.error('Error processing barcode:', error);
+    resultDiv.textContent = 'Verbindungsfehler';
   }
 }
 
 function closeScanner() {
   const modal = document.getElementById('scannerModal');
-  const video = document.getElementById('video');
-  
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop());
-    stream = null;
+
+  if (html5QrCode) {
+    html5QrCode.stop().catch(err => {
+      console.error('Error stopping scanner:', err);
+    });
+    html5QrCode = null;
   }
-  
-  video.srcObject = null;
+
   modal.classList.remove('active');
 }
+
+// Product name modal functions
+function showProductModal(barcode) {
+  currentBarcode = barcode;
+  document.getElementById('scannedBarcode').textContent = barcode;
+  document.getElementById('productName').value = '';
+  document.getElementById('productQuantity').value = '1';
+  document.getElementById('productModal').classList.add('active');
+  document.getElementById('productName').focus();
+}
+
+function closeProductModal() {
+  document.getElementById('productModal').classList.remove('active');
+  currentBarcode = null;
+}
+
+async function saveProduct() {
+  const productName = document.getElementById('productName').value.trim();
+  const quantity = parseInt(document.getElementById('productQuantity').value) || 1;
+
+  if (!productName) {
+    showToast('Bitte Produktnamen eingeben', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch('barcode_scan.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        barcode: currentBarcode,
+        product_name: productName,
+        quantity: quantity
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      closeProductModal();
+      showToast('Produkt hinzugefügt: ' + productName, 'success');
+      loadInventory();
+    } else {
+      showToast('Fehler: ' + (data.error || 'Unbekannter Fehler'), 'error');
+    }
+  } catch (error) {
+    console.error('Error saving product:', error);
+    showToast('Verbindungsfehler', 'error');
+  }
+}
+
+// Handle Enter key in product name input
+document.addEventListener('DOMContentLoaded', function() {
+  const productNameInput = document.getElementById('productName');
+  if (productNameInput) {
+    productNameInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        saveProduct();
+      }
+    });
+  }
+});
 
 function logout() {
   if (confirm('Wirklich ausloggen?')) {
